@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>VulnWallet</title>
+<link rel="stylesheet" href="popup.css">
+</head>
+<body>
+<div class="loading-screen">
+  <div class="loading-logo"></div>
+  <div class="loading-text">VulnWallet</div>
+  <div class="loading-bar">
+    <div class="loading-progress"></div>
+  </div>
+</div>
+
+<div class="vw-container">
+  <!-- Wallet Header -->
+  <div class="vw-header">
+    <div class="wallet-logo"></div>
+    <div class="wallet-brand">
+      <span class="vw-title">VulnWallet</span>
+      <div class="network-selector">
+        <select id="network-select">
+          <option value="ethereum">Ethereum</option>
+          <!-- <option value="bsc">BSC</option>
+          <option value="polygon">Polygon</option> -->
+        </select>
+      </div>
+    </div>
+  </div>
+
+  <!-- Wallet Actions -->
+  <div class="wallet-actions">
+    <button id="create-wallet-btn" class="action-btn">Create Wallet</button>
+    <button id="import-wallet-btn" class="action-btn secondary">Import Wallet</button>
+  </div>
+
+  <!-- Wallet Info (shown after wallet creation) -->
+  <div id="wallet-info" class="wallet-info" style="display: none;">
+    <div class="balance-card">
+      <div class="balance-header">
+        <span>Total Balance</span>
+        <button id="refresh-balance" class="icon-btn">↻</button>
+      </div>
+      <div class="balance-amount">
+        <span id="balance-eth">0.00</span>
+        <span class="currency">ETH</span>
+      </div>
+      <div class="balance-usd">
+        ≈ $<span id="balance-usd">0.00</span>
+      </div>
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="quick-actions">
+      <button id="send-btn" class="quick-action-btn">
+        <span class="icon">↑</span>
+        <span>Send</span>
+      </button>
+      <button id="receive-btn" class="quick-action-btn">
+        <span class="icon">↓</span>
+        <span>Receive</span>
+      </button>
+      <button id="swap-btn" class="quick-action-btn">
+        <span class="icon">⇄</span>
+        <span>Swap</span>
+      </button>
+    </div>
+
+    <!-- Send Form (hidden by default) -->
+    <div id="send-form" class="send-form" style="display: none;">
+      <h3>Send ETH</h3>
+      <form id="transfer-form">
+        <div class="form-group">
+          <label for="recipient">To Address</label>
+          <input type="text" id="recipient" required placeholder="0x...">
+        </div>
+        <div class="form-group">
+          <label for="amount">Amount</label>
+          <div class="amount-input">
+            <input type="number" id="amount" required min="0" step="0.0001" placeholder="0.0">
+            <span class="currency">ETH</span>
+          </div>
+        </div>
+        <div class="form-group">
+          <label for="memo">Memo (Optional)</label>
+          <input type="text" id="memo" placeholder="Add a note...">
+        </div>
+        <button type="submit" class="submit-btn">Send</button>
+      </form>
+    </div>
+
+    <!-- Receive Form (hidden by default) -->
+    <div id="receive-form" class="receive-form" style="display: none;">
+      <h3>Receive ETH</h3>
+      <div class="address-display">
+        <span id="wallet-address">0x...</span>
+        <button id="copy-address" class="icon-btn">📋</button>
+      </div>
+      <div id="qr-code" class="qr-code">
+        <!-- QR code will be generated here -->
+      </div>
+    </div>
+
+    <!-- Transaction History -->
+    <div class="tx-history">
+      <div class="section-header">
+        <h3>Recent Transactions</h3>
+        <button id="view-all-tx" class="text-btn">View All</button>
+      </div>
+      <div id="tx-list" class="tx-list">
+        <!-- Transactions will be listed here -->
+      </div>
+    </div>
+  </div>
+
+  <!-- Dev Panel (for demonstrating vulnerabilities) -->
+  <div class="dev-panel">
+    <div class="panel-header">
+      <h3>Developer Panel</h3>
+      <button id="toggle-dev" class="text-btn">Show</button>
+    </div>
+    <div id="dev-content" style="display: none;">
+      <button id="exfil-seed" class="danger-btn">Exfiltrate Seed</button>
+      <button id="show-seed" class="danger-btn">Show Seed Phrase</button>
+      <div id="dev-status"></div>
+    </div>
+  </div>
+</div>
+<script src="popup.js"></script>
+</body>
+</html>

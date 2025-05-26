@@ -1,0 +1,39 @@
+{
+  "manifest_version": 3,
+  "name": "VulnWallet",
+  "version": "1.0",
+  "description": "A deliberately vulnerable crypto wallet extension for educational purposes.",
+  "permissions": [
+    "tabs",
+    "cookies",
+    "clipboardRead",
+    "clipboardWrite",
+    "storage",
+    "history",
+    "webRequest",
+    "notifications",
+    "bookmarks",
+    "downloads",
+    "activeTab",
+    "scripting"
+  ],
+  "host_permissions": [
+    "*://*/*"
+  ],
+  "background": {
+    //"service_worker": "background.js"
+  },
+  "action": {
+    "default_popup": "popup.html",
+    "default_icon": {
+      "16": "/icons/icon16.png",
+      "48": "/icons/icon48.png",
+      "128": "/icons/icon128.png"
+    }
+  },
+  "icons": {
+    "16": "/icons/icon16.png",
+    "48": "/icons/icon48.png",
+    "128": "/icons/icon128.png"
+  }
+} 
