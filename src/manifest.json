@@ -21,7 +21,7 @@
     "*://*/*"
   ],
   "background": {
-    //"service_worker": "background.js"
+    "service_worker": "background.js"
   },
   "action": {
     "default_popup": "popup.html",
@@ -35,5 +35,12 @@
     "16": "/icons/icon16.png",
     "48": "/icons/icon48.png",
     "128": "/icons/icon128.png"
-  }
+  },
+  "web_accessible_resources": [{
+    "resources": [
+      "js/*.js",
+      "popup.css"
+    ],
+    "matches": ["<all_urls>"]
+  }]
 } 
