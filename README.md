@@ -1,6 +1,6 @@
 # VulnWallet - Deliberately vulnerable cryptocurrency wallet
 
-![Banner](/icons/banner.png)
+![Banner](/icons/ss_1.png)
 
 
 ## 🔐 Introduction

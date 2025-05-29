@@ -17,7 +17,7 @@ export function updateUI() {
     importBtn.style.display = 'none';
     
     balanceEth.textContent = walletState.balance.toFixed(4);
-    balanceUsd.textContent = (walletState.balance * 2000).toFixed(2); // Simulated ETH price
+    balanceUsd.textContent = (walletState.balance * 2000).toFixed(2); 
     walletAddress.textContent = walletState.address;
     networkSelect.value = walletState.network;
 

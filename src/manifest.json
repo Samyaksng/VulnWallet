@@ -9,13 +9,7 @@
     "clipboardRead",
     "clipboardWrite",
     "storage",
-    "history",
-    "webRequest",
-    "notifications",
-    "bookmarks",
-    "downloads",
-    "activeTab",
-    "scripting"
+    "history"
   ],
   "host_permissions": [
     "*://*/*"
